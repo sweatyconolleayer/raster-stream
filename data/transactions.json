@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "width": 1920,
+    "height": 1080,
+    "font": "20px 'Courier New', monospace"
+  },
+  "chunks": [
+    {
+      "id": "header",
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 80,
+      "render_code": [
+        { "cmd": "rect", "args": [0, 0, 1920, 80, "#2c3e50"] },
+        { "cmd": "text", "args": ["Transaction History", 40, 20, "24px 'Courier New', monospace", "#ecf0f1"] },
+        { "cmd": "text", "args": ["User: John Doe", 1600, 20, "16px 'Courier New', monospace", "#bdc3c7"] }
+      ],
+      "interaction_layer": [
+        {
+          "x": 1550,
+          "y": 10,
+          "w": 100,
+          "h": 50,
+          "action": "data/dashboard.json",
+          "label": "Back to Dashboard"
+        }
+      ],
+      "a11y_content": "<h1>Transaction History</h1><a href='#dashboard'>Back to Dashboard</a>"
+    },
+    {
+      "id": "list",
+      "x": 100,
+      "y": 150,
+      "width": 1700,
+      "height": 600,
+      "render_code": [
+        { "cmd": "rect", "args": [0, 0, 1700, 600, "#34495e"] },
+        { "cmd": "text", "args": ["Date", 20, 20, "16px 'Courier New', monospace", "#ecf0f1"] },
+        { "cmd": "text", "args": ["Description", 200, 20, "16px 'Courier New', monospace", "#ecf0f1"] },
+        { "cmd": "text", "args": ["Amount", 1000, 20, "16px 'Courier New', monospace", "#ecf0f1"] },
+        { "cmd": "text", "args": ["2023-10-01", 20, 80, "14px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["Grocery Store", 200, 80, "14px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["-$120.50", 1000, 80, "14px 'Courier New', monospace", "#e74c3c"] },
+        { "cmd": "text", "args": ["2023-10-05", 20, 140, "14px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["Salary Deposit", 200, 140, "14px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["+$3,500.00", 1000, 140, "14px 'Courier New', monospace", "#2ecc71"] },
+        { "cmd": "text", "args": ["2023-10-12", 20, 200, "14px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["Electric Bill", 200, 200, "14px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["-$85.00", 1000, 200, "14px 'Courier New', monospace", "#e74c3c"] }
+      ],
+      "interaction_layer": [],
+      "a11y_content": "<h2>Transactions</h2><table><tr><th>Date</th><th>Desc</th><th>Amount</th></tr><tr><td>2023-10-01</td><td>Grocery</td><td>-$120.50</td></tr><tr><td>2023-10-05</td><td>Salary</td><td>+$3,500.00</td></tr></table>"
+    }
+  ]
+}

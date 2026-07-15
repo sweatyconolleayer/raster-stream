@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "width": 1920,
+    "height": 1080,
+    "font": "20px 'Courier New', monospace"
+  },
+  "chunks": [
+    {
+      "id": "header",
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 80,
+      "render_code": [
+        { "cmd": "rect", "args": [0, 0, 1920, 80, "#2c3e50"] },
+        { "cmd": "text", "args": ["Secure Banking Portal", 40, 20, "24px 'Courier New', monospace", "#ecf0f1"] },
+        { "cmd": "text", "args": ["User: John Doe", 1600, 20, "16px 'Courier New', monospace", "#bdc3c7"] }
+      ],
+      "interaction_layer": [
+        {
+          "x": 1550,
+          "y": 10,
+          "w": 100,
+          "h": 50,
+          "action": "data/transactions.json",
+          "label": "View Transactions"
+        }
+      ],
+      "a11y_content": "<h1>Secure Banking Portal</h1><p>Welcome, John Doe.</p><a href='#transactions'>View Transactions</a>"
+    },
+    {
+      "id": "main_chart",
+      "x": 100,
+      "y": 150,
+      "width": 600,
+      "height": 400,
+      "render_code": [
+        { "cmd": "rect", "args": [0, 0, 600, 400, "#34495e"] },
+        { "cmd": "text", "args": ["Monthly Balance", 200, 20, "18px 'Courier New', monospace", "#ecf0f1"] },
+        { "cmd": "line", "args": [50, 350, 150, 300, "#2ecc71", 3] },
+        { "cmd": "line", "args": [150, 300, 250, 250, "#2ecc71", 3] },
+        { "cmd": "line", "args": [250, 250, 350, 320, "#2ecc71", 3] },
+        { "cmd": "line", "args": [350, 320, 450, 150, "#2ecc71", 3] },
+        { "cmd": "line", "args": [450, 150, 550, 100, "#2ecc71", 3] },
+        { "cmd": "text", "args": ["Jan", 50, 360, "12px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["Feb", 150, 360, "12px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["Mar", 250, 360, "12px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["Apr", 350, 360, "12px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["May", 450, 360, "12px 'Courier New', monospace", "#bdc3c7"] },
+        { "cmd": "text", "args": ["Jun", 550, 360, "12px 'Courier New', monospace", "#bdc3c7"] }
+      ],
+      "interaction_layer": [],
+      "a11y_content": "<h2>Monthly Balance Chart</h2><p>Line chart showing balance growth from Jan to Jun.</p>"
+    },
+    {
+      "id": "sidebar",
+      "x": 750,
+      "y": 150,
+      "width": 300,
+      "height": 400,
+      "render_code": [
+        { "cmd": "rect", "args": [0, 0, 300, 400, "#2c3e50"] },
+        { "cmd": "text", "args": ["Quick Actions", 20, 20, "18px 'Courier New', monospace", "#ecf0f1"] },
+        { "cmd": "rect", "args": [20, 60, 260, 40, "#3498db"] },
+        { "cmd": "text", "args": ["Transfer Funds", 40, 70, "14px 'Courier New', monospace", "#ffffff"] },
+        { "cmd": "rect", "args": [20, 120, 260, 40, "#3498db"] },
+        { "cmd": "text", "args": ["Pay Bills", 40, 130, "14px 'Courier New', monospace", "#ffffff"] },
+        { "cmd": "rect", "args": [20, 180, 260, 40, "#3498db"] },
+        { "cmd": "text", "args": ["Report Fraud", 40, 190, "14px 'Courier New', monospace", "#ffffff"] }
+      ],
+      "interaction_layer": [
+        {
+          "x": 20,
+          "y": 60,
+          "w": 260,
+          "h": 40,
+          "action": "#transfer",
+          "label": "Transfer Funds"
+        },
+        {
+          "x": 20,
+          "y": 120,
+          "w": 260,
+          "h": 40,
+          "action": "#bills",
+          "label": "Pay Bills"
+        }
+      ],
+      "a11y_content": "<h2>Quick Actions</h2><ul><li><a href='#transfer'>Transfer Funds</a></li><li><a href='#bills'>Pay Bills</a></li></ul>"
+    }
+  ]
+}

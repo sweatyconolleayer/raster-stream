@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raster-Stream Demo: Secure Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- The Visual Canvas -->
+    <canvas id="raster-canvas"></canvas>
+    
+    <!-- The Interaction Overlay (Invisible) -->
+    <div id="interaction-layer"></div>
+    
+    <!-- Accessibility Shadow (Hidden from sighted users) -->
+    <div id="a11y-shadow" style="position:absolute; left:-9999px; top:0; width:1px; height:1px; overflow:hidden;"></div>
+
+    <script src="js/sandbox.js"></script>
+    <script src="js/engine.js"></script>
+    <script>
+        // Initialize the Raster Engine
+        const engine = new RasterEngine();
+        
+        // Start with the Dashboard Blueprint
+        engine.loadBlueprint('data/dashboard.json');
+    </script>
+</body>
+</html>
