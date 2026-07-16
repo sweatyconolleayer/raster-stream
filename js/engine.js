@@ -1,3 +1,4 @@
+// js/engine.js
 class RasterEngine {
     constructor() {
         this.canvas = document.getElementById('raster-canvas');
@@ -5,7 +6,6 @@ class RasterEngine {
         this.layer = document.getElementById('interaction-layer');
         this.a11y = document.getElementById('a11y-shadow');
         
-        // Set canvas resolution
         this.resize();
         window.addEventListener('resize', () => this.resize());
     }
@@ -18,103 +18,128 @@ class RasterEngine {
     async loadBlueprint(url) {
         try {
             const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const blueprint = await response.json();
             
+            // Validate Blueprint Structure
+            if (!blueprint.chunks || !Array.isArray(blueprint.chunks)) {
+                throw new Error("Invalid blueprint structure");
+            }
+
             this.renderBlueprint(blueprint);
         } catch (error) {
             console.error("Failed to load blueprint:", error);
             this.ctx.fillStyle = 'red';
-            this.ctx.fillText("Error loading stream", 50, 50);
+            this.ctx.font = "20px Arial";
+            this.ctx.fillText("Error: Stream Integrity Failed", 50, 50);
         }
     }
 
     renderBlueprint(blueprint) {
-        // 1. Clear Canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // 2. Clear Interaction Layer
         this.layer.innerHTML = '';
         this.a11y.innerHTML = '';
 
-        // 3. Set Global Styles (from blueprint meta)
-        this.ctx.font = blueprint.meta.font;
-        this.ctx.textBaseline = 'top';
-
-        // 4. Process Chunks
         blueprint.chunks.forEach(chunk => {
             this.processChunk(chunk);
         });
     }
 
     processChunk(chunk) {
-        // A. Create Sandbox for this chunk
-        const sandbox = new DrawingSandbox(this.ctx, chunk.x, chunk.y);
+        // A. Create Secure Sandbox
+        const sandbox = new SecureDrawingSandbox(this.ctx, chunk.x, chunk.y);
         sandbox.saveContext();
 
-        // B. Execute Render Code
-        // In this demo, we assume the code is a simple function call structure
-        // In production, this would be a safer AST execution
-        this.executeRenderCode(chunk.render_code, sandbox);
+        // B. Execute Render Code (Securely)
+        if (chunk.render_code && Array.isArray(chunk.render_code)) {
+            chunk.render_code.forEach(cmdObj => {
+                // Validate command object structure
+                if (cmdObj.cmd && Array.isArray(cmdObj.args)) {
+                    sandbox.executeCommand(cmdObj.cmd, cmdObj.args);
+                } else {
+                    console.warn("Invalid command format skipped");
+                }
+            });
+        }
 
         sandbox.restoreContext();
 
-        // C. Build Interaction Layer (Hotspots)
-        if (chunk.interaction_layer) {
+        // C. Build Interaction Layer (Securely)
+        if (chunk.interaction_layer && Array.isArray(chunk.interaction_layer)) {
             chunk.interaction_layer.forEach(hotspot => {
-                this.createHotspot(hotspot, chunk.x, chunk.y);
+                this.createSecureHotspot(hotspot, chunk.x, chunk.y);
             });
         }
 
         // D. Build Accessibility Shadow
         if (chunk.a11y_content) {
-            this.createA11yContent(chunk.a11y_content);
+            this.createSecureA11yContent(chunk.a11y_content);
         }
     }
 
+    createSecureHotspot(hotspot, chunkX, chunkY) {
+        // Sanitize Coordinates
+        const absX = Number(hotspot.x) + Number(chunkX);
+        const absY = Number(hotspot.y) + Number(chunkY);
+        const w = Number(hotspot.w);
+        const h = Number(hotspot.h);
 
-    executeRenderCode(code, sandbox) {
-        code.forEach(cmd => {
-            const method = sandbox[cmd.cmd];
-            if (method) {
-                // FIX: Bind 'sandbox' as the 'this' context for the method
-                method.apply(sandbox, cmd.args); 
-            }
-        });
-    }
+        if (isNaN(absX) || isNaN(absY) || isNaN(w) || isNaN(h)) return;
 
-    createHotspot(hotspot, chunkX, chunkY) {
         const el = document.createElement('div');
-        el.className = 'hotspot';
         
-        // Calculate absolute position
-        const absX = hotspot.x + chunkX;
-        const absY = hotspot.y + chunkY;
+        // Security: Use setAttribute for styles, not innerHTML
+        el.style.position = 'absolute';
+        el.style.left = `${absX}px`;
+        el.style.top = `${absY}px`;
+        el.style.width = `${w}px`;
+        el.style.height = `${h}px`;
+        el.style.cursor = 'pointer';
+        el.style.backgroundColor = 'transparent';
         
-        el.style.left = absX + 'px';
-        el.style.top = absY + 'px';
-        el.style.width = hotspot.w + 'px';
-        el.style.height = hotspot.h + 'px';
+        // Security: Sanitize the action URL
+        const action = this.sanitizeUrl(hotspot.action);
         
-        // Handle Click
         el.onclick = () => {
-            console.log(`Navigating to: ${hotspot.action}`);
-            // Simulate navigation by loading a new blueprint
-            if (hotspot.action.startsWith('data/')) {
-                this.loadBlueprint(hotspot.action);
+            // Prevent malicious navigation
+            if (action.startsWith('data/')) {
+                this.loadBlueprint(action);
+            } else if (action.startsWith('#')) {
+                // Allow internal anchors
+                window.location.hash = action;
             } else {
-                alert("External link: " + hotspot.action);
+                // Block external links unless whitelisted
+                console.warn("Blocked external navigation");
             }
         };
 
-        // Add tooltip for demo purposes
-        el.title = hotspot.label || "Interactive Element";
-        
+        // Optional: Add a title for debugging (sanitized)
+        if (hotspot.label) {
+            el.title = String(hotspot.label).replace(/[<>]/g, '');
+        }
+
         this.layer.appendChild(el);
     }
 
-    createA11yContent(content) {
+    createSecureA11yContent(content) {
+        // Security: Never use innerHTML with raw strings for A11y
+        // Instead, create a text node or use a sanitizer library
+        // For this demo, we strip tags and use textContent
         const div = document.createElement('div');
-        div.innerHTML = content;
+        div.textContent = String(content); 
         this.a11y.appendChild(div);
+    }
+
+    sanitizeUrl(url) {
+        if (!url) return '';
+        // Only allow relative paths or safe internal anchors
+        if (url.startsWith('data/') || url.startsWith('#')) {
+            return url;
+        }
+        // Block javascript: or data: URLs
+        if (url.startsWith('javascript:') || url.startsWith('data:')) {
+            return '';
+        }
+        return '';
     }
 }
