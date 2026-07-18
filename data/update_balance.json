@@ -1,0 +1,28 @@
+{
+  "type": "delta",
+  "chunks": [
+    {
+      "id": "header",
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 80,
+      "render_code": [
+        { "cmd": "rect", "args": [0, 0, 1920, 80, "#27ae60"] }, 
+        { "cmd": "text", "args": ["Secure Banking Portal", 40, 20, "24px 'Courier New', monospace", "#ecf0f1"] },
+        { "cmd": "text", "args": ["User: John Doe | NEW BALANCE: $14,250.00", 1200, 20, "16px 'Courier New', monospace", "#ffffff"] }
+      ],
+      "interaction_layer": [
+        {
+          "x": 1700,
+          "y": 10,
+          "w": 180,
+          "h": 50,
+          "action": "data/transactions.json",
+          "label": "View Transactions"
+        }
+      ],
+      "a11y_content": "<h1>Secure Banking Portal</h1><p>Welcome, John Doe. New Balance is $14,250.</p>"
+    }
+  ]
+}
