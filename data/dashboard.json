@@ -67,6 +67,8 @@
         { "cmd": "text", "args": ["Pay Bills", 40, 130, "14px 'Courier New', monospace", "#ffffff"] },
         { "cmd": "rect", "args": [20, 180, 260, 40, "#3498db"] },
         { "cmd": "text", "args": ["Report Fraud", 40, 190, "14px 'Courier New', monospace", "#ffffff"] }
+        { "cmd": "rect", "args": [20, 240, 260, 40, "#e67e22"] },
+        { "cmd": "text", "args": ["Refresh Balance", 40, 250, "14px 'Courier New', monospace", "#ffffff"] }
       ],
       "interaction_layer": [
         {
@@ -84,6 +86,14 @@
           "h": 40,
           "action": "#bills",
           "label": "Pay Bills"
+        },
+        {
+          "x": 20,
+          "y": 240,
+          "w": 260,
+          "h": 40,
+          "action": "data/update_balance.json",
+          "label": "Refresh Balance"
         }
       ],
       "a11y_content": "<h2>Quick Actions</h2><ul><li><a href='#transfer'>Transfer Funds</a></li><li><a href='#bills'>Pay Bills</a></li></ul>"
