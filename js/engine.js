@@ -18,21 +18,49 @@ class RasterEngine {
     async loadBlueprint(url) {
         try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const blueprint = await response.json();
             
-            // Validate Blueprint Structure
-            if (!blueprint.chunks || !Array.isArray(blueprint.chunks)) {
-                throw new Error("Invalid blueprint structure");
+            let blueprint;
+            if (url.endsWith('.enc')) {
+                const encryptedData = await response.json();
+                blueprint = await this.decryptPayload(encryptedData);
+            } else {
+                blueprint = await response.json();
             }
-
-            this.renderBlueprint(blueprint);
+            
+            // Check if this is a partial update or a full page load
+            if (blueprint.type === 'delta') {
+                this.applyDelta(blueprint);
+            } else {
+                this.currentBlueprint = blueprint;
+                this.scrollY = 0; // Reset scroll on new full page
+                this.renderBlueprint(blueprint);
+            }
+            
         } catch (error) {
-            console.error("Failed to load blueprint:", error);
+            console.error("Failed to load/decrypt blueprint:", error);
             this.ctx.fillStyle = 'red';
-            this.ctx.font = "20px Arial";
-            this.ctx.fillText("Error: Stream Integrity Failed", 50, 50);
+            this.ctx.fillText("Error loading secure stream", 50, 50);
         }
+    }
+
+    applyDelta(deltaBlueprint) {
+        if (!this.currentBlueprint) return; // Cannot patch if nothing is loaded
+
+        // Loop through the new chunks and replace the existing ones by ID
+        deltaBlueprint.chunks.forEach(newChunk => {
+            const existingIndex = this.currentBlueprint.chunks.findIndex(c => c.id === newChunk.id);
+            
+            if (existingIndex !== -1) {
+                // Overwrite existing chunk
+                this.currentBlueprint.chunks[existingIndex] = newChunk;
+            } else {
+                // If the chunk ID doesn't exist, append it as a new visual layer
+                this.currentBlueprint.chunks.push(newChunk);
+            }
+        });
+
+        // Re-render the canvas with the patched blueprint
+        this.renderBlueprint(this.currentBlueprint);
     }
 
     renderBlueprint(blueprint) {
