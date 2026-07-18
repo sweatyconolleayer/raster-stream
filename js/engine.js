@@ -1,4 +1,5 @@
 // js/engine.js
+// js/engine.js
 class RasterEngine {
     constructor() {
         this.canvas = document.getElementById('raster-canvas');
@@ -6,16 +7,61 @@ class RasterEngine {
         this.layer = document.getElementById('interaction-layer');
         this.a11y = document.getElementById('a11y-shadow');
         
+        // Hardcoded key for demo purposes (matching Python script)
+        this.rawKey = new TextEncoder().encode('12345678901234567890123456789012');
+        
         this.resize();
         window.addEventListener('resize', () => this.resize());
+        
+        // Add scrolling support for large datasets
+        this.scrollY = 0;
+        window.addEventListener('wheel', (e) => this.handleScroll(e));
     }
 
     resize() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+        if(this.currentBlueprint) this.renderBlueprint(this.currentBlueprint);
     }
 
-    async loadBlueprint(url) {
+    handleScroll(e) {
+        this.scrollY += e.deltaY;
+        this.scrollY = Math.max(0, this.scrollY); // Prevent negative scroll
+        if (this.currentBlueprint) this.renderBlueprint(this.currentBlueprint);
+    }
+
+    async getCryptoKey() {
+        return await crypto.subtle.importKey(
+            "raw", this.rawKey, "AES-GCM", true, ["encrypt", "decrypt"]
+        );
+    }
+
+    async decryptPayload(encryptedPayload) {
+        const key = await this.getCryptoKey();
+        
+        // Decode Base64 to ArrayBuffer
+        const iv = Uint8Array.from(atob(encryptedPayload.iv), c => c.charCodeAt(0));
+        const ciphertext = Uint8Array.from(atob(encryptedPayload.ciphertext), c => c.charCodeAt(0));
+        const tag = Uint8Array.from(atob(encryptedPayload.tag), c => c.charCodeAt(0));
+        
+        // Combine ciphertext and tag for WebCrypto
+        const data = new Uint8Array(ciphertext.length + tag.length);
+        data.set(ciphertext);
+        data.set(tag, ciphertext.length);
+
+        try {
+            const decryptedBuffer = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv }, key, data
+            );
+            const decryptedText = new TextDecoder().decode(decryptedBuffer);
+            return JSON.parse(decryptedText);
+        } catch (e) {
+            console.error("Decryption failed. Integrity compromised or wrong key.", e);
+            throw e;
+        }
+    }
+
+   async loadBlueprint(url) {
         try {
             const response = await fetch(url);
             
@@ -67,107 +113,67 @@ class RasterEngine {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.layer.innerHTML = '';
         this.a11y.innerHTML = '';
+        this.ctx.font = blueprint.meta.font;
+        this.ctx.textBaseline = 'top';
+
+        // Apply global scroll offset
+        this.ctx.save();
+        this.ctx.translate(0, -this.scrollY);
 
         blueprint.chunks.forEach(chunk => {
             this.processChunk(chunk);
         });
+        
+        this.ctx.restore();
     }
 
     processChunk(chunk) {
-        // A. Create Secure Sandbox
-        const sandbox = new SecureDrawingSandbox(this.ctx, chunk.x, chunk.y);
+        const sandbox = new DrawingSandbox(this.ctx, chunk.x, chunk.y);
         sandbox.saveContext();
-
-        // B. Execute Render Code (Securely)
-        if (chunk.render_code && Array.isArray(chunk.render_code)) {
-            chunk.render_code.forEach(cmdObj => {
-                // Validate command object structure
-                if (cmdObj.cmd && Array.isArray(cmdObj.args)) {
-                    sandbox.executeCommand(cmdObj.cmd, cmdObj.args);
-                } else {
-                    console.warn("Invalid command format skipped");
-                }
-            });
-        }
-
+        this.executeRenderCode(chunk.render_code, sandbox);
         sandbox.restoreContext();
 
-        // C. Build Interaction Layer (Securely)
-        if (chunk.interaction_layer && Array.isArray(chunk.interaction_layer)) {
+        if (chunk.interaction_layer) {
             chunk.interaction_layer.forEach(hotspot => {
-                this.createSecureHotspot(hotspot, chunk.x, chunk.y);
+                this.createHotspot(hotspot, chunk.x, chunk.y);
             });
         }
-
-        // D. Build Accessibility Shadow
         if (chunk.a11y_content) {
-            this.createSecureA11yContent(chunk.a11y_content);
+            this.createA11yContent(chunk.a11y_content);
         }
     }
 
-    createSecureHotspot(hotspot, chunkX, chunkY) {
-        // Sanitize Coordinates
-        const absX = Number(hotspot.x) + Number(chunkX);
-        const absY = Number(hotspot.y) + Number(chunkY);
-        const w = Number(hotspot.w);
-        const h = Number(hotspot.h);
+    executeRenderCode(code, sandbox) {
+        code.forEach(cmd => {
+            const method = sandbox[cmd.cmd];
+            if (method) method.apply(sandbox, cmd.args);
+        });
+    }
 
-        if (isNaN(absX) || isNaN(absY) || isNaN(w) || isNaN(h)) return;
-
+    createHotspot(hotspot, chunkX, chunkY) {
         const el = document.createElement('div');
+        el.className = 'hotspot';
+        const absX = hotspot.x + chunkX;
+        const absY = hotspot.y + chunkY - this.scrollY; // Adjust for scroll
         
-        // Security: Use setAttribute for styles, not innerHTML
-        el.style.position = 'absolute';
-        el.style.left = `${absX}px`;
-        el.style.top = `${absY}px`;
-        el.style.width = `${w}px`;
-        el.style.height = `${h}px`;
-        el.style.cursor = 'pointer';
-        el.style.backgroundColor = 'transparent';
-        
-        // Security: Sanitize the action URL
-        const action = this.sanitizeUrl(hotspot.action);
+        el.style.left = absX + 'px';
+        el.style.top = absY + 'px';
+        el.style.width = hotspot.w + 'px';
+        el.style.height = hotspot.h + 'px';
         
         el.onclick = () => {
-            // Prevent malicious navigation
-            if (action.startsWith('data/')) {
-                this.loadBlueprint(action);
-            } else if (action.startsWith('#')) {
-                // Allow internal anchors
-                window.location.hash = action;
+            if (hotspot.action.includes('.json') || hotspot.action.includes('.enc')) {
+                this.loadBlueprint(hotspot.action);
             } else {
-                // Block external links unless whitelisted
-                console.warn("Blocked external navigation");
+                alert("Action triggered: " + hotspot.action);
             }
         };
-
-        // Optional: Add a title for debugging (sanitized)
-        if (hotspot.label) {
-            el.title = String(hotspot.label).replace(/[<>]/g, '');
-        }
-
         this.layer.appendChild(el);
     }
 
-    createSecureA11yContent(content) {
-        // Security: Never use innerHTML with raw strings for A11y
-        // Instead, create a text node or use a sanitizer library
-        // For this demo, we strip tags and use textContent
+    createA11yContent(content) {
         const div = document.createElement('div');
-        div.textContent = String(content); 
+        div.innerHTML = content;
         this.a11y.appendChild(div);
-    }
-
-    sanitizeUrl(url) {
-        if (!url) return '';
-        // Only allow relative paths or safe internal anchors
-        if (url.startsWith('data/') || url.startsWith('#')) {
-            return url;
-        }
-        // Block javascript: or data: URLs
-        if (url.startsWith('javascript:') || url.startsWith('data:')) {
-            return '';
-        }
-        return '';
     }
 }
